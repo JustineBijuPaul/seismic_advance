@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Seismic Zones - Seismic Advance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .zone-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.3s ease;
+        margin-bottom: 2rem;
+    }
+
+    .zone-high { border-left: 5px solid #ff4444; }
+    .zone-moderate { border-left: 5px solid #ffbb33; }
+    .zone-low { border-left: 5px solid #00C851; }
+
+    .risk-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        color: white;
+        font-weight: 600;
+    }
+
+    .risk-severe { background: #ff4444; }
+    .risk-moderate { background: #ffbb33; }
+    .risk-low { background: #00C851; }
+
+    .characteristics-list, .precautions-list {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .characteristics-list li, .precautions-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .characteristics-list li:last-child, .precautions-list li:last-child {
+        border-bottom: none;
+    }
+
+    .zone-header {
+        background: linear-gradient(45deg, #ff4444, #ff6b6b);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+    }
+
+    .filter-section {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="zone-header">
+    <div class="container text-center">
+        <h1>Seismic Zone Information</h1>
+        <p class="lead">Understanding earthquake risk levels in different areas</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="filter-section">
+        <h5>Filter by Risk Level</h5>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('seismic_zones') }}" class="btn btn-outline-primary">All Zones</a>
+            <a href="{{ url_for('seismic_zones', risk='Severe') }}" class="btn btn-outline-danger">High Risk</a>
+            <a href="{{ url_for('seismic_zones', risk='Moderate') }}" class="btn btn-outline-warning">Moderate Risk</a>
+            <a href="{{ url_for('seismic_zones', risk='Low') }}" class="btn btn-outline-success">Low Risk</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for zone in zones %}
+        <div class="col-md-12">
+            <div class="card zone-card zone-{{ zone.risk_level.lower() }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="card-title">{{ zone.name }}</h3>
+                        <span class="risk-badge risk-{{ zone.risk_level.lower() }}">
+                            {{ zone.risk_level }} Risk
+                        </span>
+                    </div>
+                    
+                    <p class="lead">{{ zone.description }}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Characteristics</h5>
+                            <ul class="characteristics-list">
+                                {% for char in zone.characteristics %}
+                                <li>
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ char }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Recommended Precautions</h5>
+                            <ul class="precautions-list">
+                                {% for precaution in zone.precautions %}
+                                <li>
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    {{ precaution }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if zone.risk_level == 'Severe' %}
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Special attention required: This is a high-risk seismic zone requiring strict adherence to safety protocols.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not zones %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No seismic zones found for the selected risk level.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h4>Understanding Seismic Zones</h4>
+            <p>
+                Seismic zones are geographical areas with varying levels of earthquake risk. Understanding your location's 
+                seismic zone classification is crucial for:
+            </p>
+            <ul>
+                <li>Building construction standards</li>
+                <li>Emergency preparedness planning</li>
+                <li>Insurance considerations</li>
+                <li>Safety protocol development</li>
+            </ul>
+            <a href="{{ url_for('education_home') }}" class="btn btn-primary mt-3">
+                Learn More About Earthquake Safety
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scrolling to filter buttons
+    document.querySelectorAll('.filter-section a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            if (href.includes('#')) {
+                e.preventDefault();
+                document.querySelector(href).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

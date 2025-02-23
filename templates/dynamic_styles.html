@@ -1,0 +1,23 @@
+{% macro generate_styles(theme) %}
+{% set dark_theme = {
+    'background': '#1a1a1a',
+    'surface': '#2d2d2d',
+    'text': '#ffffff',
+    'text_muted': '#bbbbbb'
+} %}
+{% set light_theme = {
+    'background': '#ffffff',
+    'surface': '#f5f5f5',
+    'text': '#333333',
+    'text_muted': '#666666'
+} %}
+{% set colors = dark_theme if theme == 'dark' else light_theme %}
+<style>
+    :root {
+        --color-background: {{ colors.background }};
+        --color-surface: {{ colors.surface }};
+        --color-text: {{ colors.text }};
+        --color-text-muted: {{ colors.text_muted }};
+    }
+</style>
+{% endmacro %}

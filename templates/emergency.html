@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Response - Seismic Advance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .resource-marker {
+        background: none;
+        border: none;
+    }
+    
+    .resource-marker i {
+        font-size: 24px;
+    }
+    
+    .resource-hospitals { color: #ff4444; }
+    .resource-shelters { color: #33b5e5; }
+    .resource-fire_stations { color: #ff8800; }
+    .resource-police_stations { color: #2BBBAD; }
+    
+    .guidelines-section {
+        border-left: 4px solid #ff4444;
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .contact-card {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .contact-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Emergency Map -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Emergency Resources & Evacuation Routes</h5>
+                </div>
+                <div class="card-body">
+                    <div id="emergencyMap" style="height: 400px;"></div>
+                    <div class="mt-3">
+                        <button class="btn btn-info" onclick="findNearbyResources('hospitals')">
+                            <i class="fas fa-hospital"></i> Hospitals
+                        </button>
+                        <button class="btn btn-primary" onclick="findNearbyResources('shelters')">
+                            <i class="fas fa-house-damage"></i> Shelters
+                        </button>
+                        <button class="btn btn-warning" onclick="findNearbyResources('fire_stations')">
+                            <i class="fas fa-fire-extinguisher"></i> Fire Stations
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Emergency Contacts -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Emergency Contacts</h5>
+                </div>
+                <div class="card-body">
+                    <form id="contactForm" class="mb-4">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" name="name" placeholder="Contact Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="tel" class="form-control" name="phone" placeholder="Phone Number" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" class="form-control" name="email" placeholder="Email">
+                        </div>
+                        <div class="mb-3">
+                            <select class="form-control" name="relationship" required>
+                                <option value="">Relationship</option>
+                                <option value="family">Family</option>
+                                <option value="friend">Friend</option>
+                                <option value="neighbor">Neighbor</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Contact</button>
+                    </form>
+                    <div id="contactsList"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Safety Guidelines -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Safety Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <div class="nav nav-pills mb-3">
+                        <button class="nav-link active" onclick="showGuidelines('immediate')">Immediate</button>
+                        <button class="nav-link" onclick="showGuidelines('after_shock')">After Shock</button>
+                        <button class="nav-link" onclick="showGuidelines('evacuation')">Evacuation</button>
+                    </div>
+                    <div id="guidelinesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script>
+let map, userMarker;
+let resources = {};
+
+// Initialize map
+function initMap() {
+    map = L.map('emergencyMap').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            map.setView([lat, lng], 13);
+            userMarker = L.marker([lat, lng]).addTo(map);
+        });
+    }
+}
+
+// Find nearby resources
+async function findNearbyResources(type) {
+    const position = userMarker.getLatLng();
+    
+    try {
+        const response = await fetch('/emergency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'find_resources',
+                type: type,
+                lat: position.lat,
+                lng: position.lng,
+                radius: 10
+            })
+        });
+        
+        const resources = await response.json();
+        displayResources(resources, type);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Display resources on map
+function displayResources(resources, type) {
+    // Clear existing markers of this type
+    if (resources[type]) {
+        resources[type].forEach(marker => map.removeLayer(marker));
+    }
+    resources[type] = [];
+    
+    resources.forEach(resource => {
+        const marker = L.marker(resource.coordinates, {
+            icon: L.divIcon({
+                className: `resource-marker resource-${type}`,
+                html: `<i class="fas ${getResourceIcon(type)}"></i>`
+            })
+        }).addTo(map);
+        
+        marker.bindPopup(`
+            <strong>${resource.name}</strong><br>
+            Distance: ${resource.distance} km<br>
+            Phone: ${resource.phone}<br>
+            ${resource.capacity ? `Capacity: ${resource.capacity}<br>` : ''}
+            <button class="btn btn-sm btn-primary mt-2" onclick="getRoute(${resource.coordinates[0]}, ${resource.coordinates[1]})">
+                Get Directions
+            </button>
+        `);
+        
+        resources[type].push(marker);
+    });
+}
+
+// Get resource icon
+function getResourceIcon(type) {
+    const icons = {
+        'hospitals': 'fa-hospital',
+        'shelters': 'fa-house-damage',
+        'fire_stations': 'fa-fire-extinguisher',
+        'police_stations': 'fa-shield-alt'
+    };
+    return icons[type] || 'fa-building';
+}
+
+// Get evacuation route
+async function getRoute(endLat, endLng) {
+    const start = userMarker.getLatLng();
+    
+    try {
+        const response = await fetch('/emergency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_route',
+                start_lat: start.lat,
+                start_lng: start.lng,
+                end_lat: endLat,
+                end_lng: endLng
+            })
+        });
+        
+        const route = await response.json();
+        displayRoute(route);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Display route on map
+function displayRoute(route) {
+    if (route.error) {
+        alert('Error getting route: ' + route.error);
+        return;
+    }
+    
+    if (window.currentRoute) {
+        map.removeLayer(window.currentRoute);
+    }
+    
+    window.currentRoute = L.polyline(route.geometry, {
+        color: '#ff4444',
+        weight: 5,
+        opacity: 0.7
+    }).addTo(map);
+    
+    map.fitBounds(window.currentRoute.getBounds());
+}
+
+// Handle contact form submission
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/emergency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'add_contact',
+                name: formData.get('name'),
+                phone: formData.get('phone'),
+                email: formData.get('email'),
+                relationship: formData.get('relationship'),
+                priority: 1
+            })
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            e.target.reset();
+            await loadContacts();
+            showAlert('Contact added successfully', 'success');
+        } else {
+            showAlert(result.error || 'Failed to add contact', 'danger');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Failed to add contact', 'danger');
+    }
+});
+
+// Load and display contacts
+async function loadContacts() {
+    try {
+        const response = await fetch('/emergency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_contacts'
+            }),
+            credentials: 'same-origin'  // Important for session handling
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch contacts');
+        }
+        
+        const contacts = await response.json();
+        displayContacts(Array.isArray(contacts) ? contacts : []);
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('Failed to load contacts', 'danger');
+    }
+}
+
+// Display contacts with error handling
+function displayContacts(contacts) {
+    const container = document.getElementById('contactsList');
+    if (!container) {
+        console.error('Contact list container not found');
+        return;
+    }
+    
+    if (!contacts || contacts.length === 0) {
+        container.innerHTML = '<p class="text-muted">No emergency contacts added yet.</p>';
+        return;
+    }
+    
+    try {
+        container.innerHTML = contacts.map(contact => `
+            <div class="contact-card p-3 mb-2 bg-light">
+                <h6>${contact.name || 'Unknown'}</h6>
+                <p class="mb-1">
+                    <i class="fas fa-phone"></i> ${contact.phone || 'No phone'}<br>
+                    ${contact.email ? `<i class="fas fa-envelope"></i> ${contact.email}<br>` : ''}
+                    <i class="fas fa-user"></i> ${contact.relationship || 'Unknown'}
+                </p>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error displaying contacts:', error);
+        container.innerHTML = '<p class="text-danger">Error displaying contacts</p>';
+    }
+}
+
+// Show alert message
+function showAlert(message, type = 'info') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.querySelector('.card-body').insertAdjacentHTML('afterbegin', alertHtml);
+}
+
+// Load and display guidelines
+async function showGuidelines(phase) {
+    try {
+        const response = await fetch('/emergency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'get_guidelines',
+                phase: phase
+            })
+        });
+        
+        const guidelines = await response.json();
+        displayGuidelines(guidelines[phase]);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Display guidelines
+function displayGuidelines(guidelines) {
+    const container = document.getElementById('guidelinesList');
+    container.innerHTML = `
+        <div class="guidelines-section">
+            <ul class="list-unstyled">
+                ${guidelines.map(g => `
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        ${g}
+                    </li>
+                `).join('')}
+            </ul>
+        </div>
+    `;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    loadContacts();
+    showGuidelines('immediate');
+});
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
-{% extends "modern_base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Error - Seismic Quake{% endblock %}
+{% block title %}Error - Seismic Advance{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -10,6 +10,8 @@
         align-items: center;
         justify-content: center;
         padding: 2rem;
+        text-align: center;
+        margin-top: 50px;
     }
 
     .error-card {
@@ -36,7 +38,12 @@
     }
 
     .error-message {
-        color: var(--color-text);
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px;
         font-size: 1.1rem;
         margin-bottom: 2rem;
     }
@@ -87,15 +94,13 @@
             <line x1="12" y1="16" x2="12" y2="16"/>
         </svg>
         
-        <h1 class="error-title">Error Occurred</h1>
-        <p class="error-message">{{ error }}</p>
-        
-        {% if details %}
-        <div class="error-details">
-            <p>Technical details:</p>
-            <code>{{ details }}</code>
+        <h1 class="error-title">Error</h1>
+        <div class="error-message">
+            <h2>{{ error }}</h2>
+            {% if details %}
+            <p>{{ details }}</p>
+            {% endif %}
         </div>
-        {% endif %}
         
         <a href="/" class="home-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
