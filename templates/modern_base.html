@@ -3,72 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Seismic Analysis{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern-theme.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}Seismic Quake{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/vendor.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='images/logo-w.svg') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --color-background: #0a0a0f;
+            --color-primary: #6d5dfc;
+            --color-primary-light: #8677ff;
+            --color-card: #1a1a24;
+            --color-text: #fff;
+            --color-muted: #888;
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.4);
+            --gradient-primary: linear-gradient(135deg, #6d5dfc, #8677ff);
+            --gradient-warm: linear-gradient(135deg, #ff6b6b, #ffa502);
+            --gradient-card: linear-gradient(145deg, #1a1a24, #14141c);
+        }
+
+        body {
+            background: var(--color-background);
+            color: var(--color-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            backdrop-filter: blur(10px);
+            background: rgba(26, 26, 36, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            width: 150px;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-decoration: none;
+            color: var(--color-text);
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--color-text);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::before {
+            width: 100%;
+        }
+
+        .modern-btn {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(109, 93, 252, 0.4);
+        }
+
+        .modern-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(109, 93, 252, 0.6);
+        }
+
+        .modern-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            box-shadow: none;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 80px auto 0;
+            padding: 2rem;
+        }
+
+        .section {
+            margin: 4rem 0;
+        }
+
+        .modern-card {
+            background: var(--gradient-card);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .modern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .nav-links {
+                margin-top: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="background"></div>
-    
-    <!-- Navigation -->
-    <nav class="modern-nav">
-        <div class="nav-container">
-            <a href="/" class="nav-brand">
-                <img src="{{ url_for('static', filename='images/logo-w.svg') }}" alt="Logo" width="40">
-                <span>Seismic Quake</span>
+    <header class="header">
+        <div class="header-content">
+            <a href="{{ url_for('index') }}" class="logo">
+                <img src="{{ url_for('static', filename='images/logo-w.svg') }}" alt="Seismic Quake">
+                <h1>Seismic Quake</h1>
             </a>
-            <div class="nav-links" id="nav-links">
-                <a href="/" class="nav-link">Home</a>
-                <a href="/earthquake_history" class="nav-link">History</a>
-                <a href="/upload" class="modern-btn">Analyze Now</a>
-            </div>
-            <button class="nav-toggle" id="nav-toggle">
-                <span></span>
-            </button>
+            <nav class="nav-links">
+                <a href="{{ url_for('index') }}">Home</a>
+                <a href="{{ url_for('upload_file') }}">Analysis</a>
+                <a href="{{ url_for('earthquake_history') }}">History</a>
+                <a href="{{ url_for('documentation') }}">Documentation</a>
+            </nav>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
+    {% block content %}{% endblock %}
 
-    <!-- Footer -->
-    <footer class="modern-footer">
-        <div class="footer-container">
-            <p>&copy; 2024 Seismic Quake. All rights reserved.</p>
-        </div>
-    </footer>
-
-    <!-- Base Scripts -->
+    <script src="{{ url_for('static', filename='js/plugins.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        // Navigation toggle
-        document.getElementById('nav-toggle').addEventListener('click', function() {
-            document.getElementById('nav-links').classList.toggle('active');
-            this.classList.toggle('active');
-        });
-
         // Animation on scroll
-        const observerOptions = {
-            threshold: 0.1
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
+        function handleScrollAnimation() {
+            const elements = document.querySelectorAll('.animate-on-scroll');
+            elements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                const isVisible = (rect.top <= window.innerHeight * 0.8);
+                if (isVisible) {
+                    element.classList.add('visible');
                 }
             });
-        }, observerOptions);
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.animate-on-scroll').forEach(el => {
-                observer.observe(el);
-            });
-        });
+        document.addEventListener('DOMContentLoaded', handleScrollAnimation);
+        window.addEventListener('scroll', handleScrollAnimation);
     </script>
-
     {% block extra_js %}{% endblock %}
 </body>
 </html>

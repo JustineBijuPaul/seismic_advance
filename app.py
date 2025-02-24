@@ -157,6 +157,11 @@ def index():
     """Render main page"""
     return render_template('index.html')
 
+@app.route('/documentation')
+def documentation():
+    """Render the documentation page"""
+    return render_template('documentation.html')
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     """Handle file upload and analysis"""

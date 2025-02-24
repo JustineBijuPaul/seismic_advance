@@ -1,0 +1,297 @@
+{% extends "modern_base.html" %}
+
+{% block title %}Project Documentation - Seismic Quake{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-container {
+        max-width: 1200px;
+        margin: 100px auto 40px;
+        padding: 0 20px;
+    }
+
+    .docs-nav {
+        top: 100px;
+        background: var(--color-card);
+        border-radius: 12px;
+        padding: 1.5rem;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .docs-nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .docs-nav a {
+        color: var(--color-text);
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+    }
+
+    .docs-nav a:hover {
+        background: var(--color-primary);
+    }
+
+    .docs-section {
+        margin-bottom: 4rem;
+    }
+
+    .workflow-diagram {
+        background: var(--color-card);
+        padding: 2rem;
+        border-radius: 12px;
+        margin: 2rem 0;
+    }
+
+    .workflow-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        transition: transform 0.3s ease;
+    }
+
+    .workflow-step:hover {
+        transform: translateY(-5px);
+    }
+
+    .step-number {
+        background: var(--gradient-primary);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+
+    .code-block {
+        background: #1E1E2E;
+        padding: 1.5rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+
+    .code-block pre {
+        margin: 0;
+        color: #A6ACCD;
+    }
+
+    .tech-stack {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .tech-card {
+        background: var(--color-card);
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .tech-card i {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-container">
+    <nav class="docs-nav">
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#workflow">Workflow</a></li>
+            <li><a href="#tech-stack">Tech Stack</a></li>
+            <li><a href="#ml-model">ML Model</a></li>
+            <li><a href="#api">API Reference</a></li>
+        </ul>
+    </nav>
+
+    <div class="docs-section" id="overview">
+        <div class="modern-card">
+            <h2 class="section-title">Project Overview</h2>
+            <p>Seismic Quake is an advanced machine learning-based system designed to detect and analyze seismic activities through audio and waveform data. The project combines cutting-edge ML algorithms with real-time processing capabilities to provide accurate earthquake detection.</p>
+            
+            <h3>Key Features</h3>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <h4>Real-time Analysis</h4>
+                        <p>Process and analyze seismic data in real-time with 95% accuracy and 0.5s detection speed.</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <h4>Multiple Format Support</h4>
+                        <p>Support for MSEED, WAV, and other standard seismic data formats.</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <h4>Advanced Visualization</h4>
+                        <p>Interactive waveform visualization with highlighted seismic events.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-section" id="architecture">
+        <div class="modern-card">
+            <h2 class="section-title">System Architecture</h2>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div>
+                        <h4>Frontend Layer</h4>
+                        <p>Built with Flask templates, modern CSS, and JavaScript for real-time interactions.</p>
+                        <div class="code-block">
+                            <pre>templates/
+├── modern_base.html    # Base template with common styles
+├── index.html         # Landing page
+├── upload.html        # File upload and analysis
+└── earthquake_history.html  # Historical data</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div>
+                        <h4>Backend Layer</h4>
+                        <p>Python Flask server handling data processing and ML model inference.</p>
+                        <div class="code-block">
+                            <pre>app.py
+├── Data preprocessing
+├── Feature extraction
+├── Model inference
+└── API endpoints</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div>
+                        <h4>Storage Layer</h4>
+                        <p>MongoDB for storing analysis results and GridFS for file storage.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-section" id="tech-stack">
+        <div class="modern-card">
+            <h2 class="section-title">Technology Stack</h2>
+            <div class="tech-stack">
+                <div class="tech-card">
+                    <i class="fab fa-python"></i>
+                    <h4>Python</h4>
+                    <p>Core backend language</p>
+                </div>
+                <div class="tech-card">
+                    <i class="fas fa-brain"></i>
+                    <h4>Machine Learning</h4>
+                    <p>Scikit-learn, NumPy</p>
+                </div>
+                <div class="tech-card">
+                    <i class="fas fa-server"></i>
+                    <h4>Flask</h4>
+                    <p>Web framework</p>
+                </div>
+                <div class="tech-card">
+                    <i class="fas fa-database"></i>
+                    <h4>MongoDB</h4>
+                    <p>Data storage</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-section" id="ml-model">
+        <div class="modern-card">
+            <h2 class="section-title">ML Model Architecture</h2>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div>
+                        <h4>Feature Extraction</h4>
+                        <p>The system extracts MFCC features from audio signals using librosa:</p>
+                        <div class="code-block">
+                            <pre>• Mel-frequency cepstral coefficients (MFCCs)
+• Spectral features
+• Signal energy metrics</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div>
+                        <h4>Model Training</h4>
+                        <p>Trained on a diverse dataset of seismic and non-seismic events using:</p>
+                        <div class="code-block">
+                            <pre>• Deep Neural Network
+• Feature standardization
+• Cross-validation</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="docs-section" id="api">
+        <div class="modern-card">
+            <h2 class="section-title">API Reference</h2>
+            <div class="workflow-diagram">
+                <div class="workflow-step">
+                    <div>
+                        <h4>Upload Endpoint</h4>
+                        <div class="code-block">
+                            <pre>POST /upload
+Content-Type: multipart/form-data
+Response: {
+    "prediction": "Seismic Activity Detected",
+    "confidence": 0.95,
+    "waveform_data": [...]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div>
+                        <h4>Analysis Endpoint</h4>
+                        <div class="code-block">
+                            <pre>GET /analysis/{file_id}
+Response: {
+    "time_labels": [...],
+    "amplitude_data": [...],
+    "detected_events": [...]
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
