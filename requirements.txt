@@ -57,3 +57,4 @@ flask
 flask-socketio
 geopy
 apscheduler
+reportlab==4.0.7

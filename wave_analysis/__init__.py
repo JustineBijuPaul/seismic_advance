@@ -27,7 +27,10 @@ from .services import (
     TimeSeriesPlotter,
     FrequencyPlotter,
     MultiChannelPlotter,
-    ChannelData
+    ChannelData,
+    DataExporter,
+    MSEEDExporter,
+    CSVExporter
 )
 
 __all__ = [
@@ -45,5 +48,8 @@ __all__ = [
     'TimeSeriesPlotter',
     'FrequencyPlotter',
     'MultiChannelPlotter',
-    'ChannelData'
+    'ChannelData',
+    'DataExporter',
+    'MSEEDExporter',
+    'CSVExporter'
 ]

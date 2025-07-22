@@ -26,6 +26,8 @@ from .quality_metrics import QualityMetricsCalculator
 from .time_series_plotter import TimeSeriesPlotter
 from .frequency_plotter import FrequencyPlotter
 from .multi_channel_plotter import MultiChannelPlotter, ChannelData
+from .data_exporter import DataExporter, MSEEDExporter, CSVExporter
+from .pdf_report_generator import PDFReportGenerator, PDFReportError
 
 __all__ = [
     'SignalProcessor',
@@ -45,5 +47,10 @@ __all__ = [
     'TimeSeriesPlotter',
     'FrequencyPlotter',
     'MultiChannelPlotter',
-    'ChannelData'
+    'ChannelData',
+    'DataExporter',
+    'MSEEDExporter',
+    'CSVExporter',
+    'PDFReportGenerator',
+    'PDFReportError'
 ]

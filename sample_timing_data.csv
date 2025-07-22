@@ -1,0 +1,13 @@
+Timing Analysis
+Parameter,Value (seconds),Notes
+P-wave Arrival,1.2,First P-wave detection
+S-wave Arrival,3.2,First S-wave detection
+Surface Wave Arrival,8.2,First surface wave detection
+S-P Time Difference,2.0,Used for distance estimation
+Estimated Distance (km),42.5,Based on S-P time
+
+Individual Wave Timings
+Wave Type,Segment,Arrival Time,Peak Time,End Time
+P,0,1.2,1.02,3.0
+S,0,3.2,3.03,6.0
+Love,0,8.2,8.11,10.0

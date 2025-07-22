@@ -68,6 +68,16 @@ fs = gridfs.GridFS(db)
 # Add global variable for continuous monitoring
 monitoring_active = False
 
+# Import wave analysis components
+try:
+    from wave_analysis import WaveAnalysisResult, DetailedAnalysis
+    from wave_analysis.services import WaveAnalyzer
+    from wave_analysis.services.wave_separation_engine import WaveSeparationEngine, WaveSeparationParameters
+    WAVE_ANALYSIS_AVAILABLE = True
+except ImportError as e:
+    print(f"Wave analysis components not available: {e}")
+    WAVE_ANALYSIS_AVAILABLE = False
+
 def extract_features(file_id):
     """Extract features from stored file for prediction"""
     try:
@@ -464,6 +474,357 @@ def earthquake_history():
         return render_template('error.html',
                              error="An unexpected error occurred",
                              details=str(e))
+
+@app.route('/api/analyze_waves', methods=['POST'])
+def analyze_waves():
+    """
+    API endpoint for comprehensive wave analysis.
+    
+    Expected JSON payload:
+    {
+        "file_id": "string",  # GridFS file ID
+        "parameters": {       # Optional analysis parameters
+            "sampling_rate": 100,
+            "min_snr": 2.0,
+            "min_detection_confidence": 0.3
+        }
+    }
+    """
+    if not WAVE_ANALYSIS_AVAILABLE:
+        return jsonify({
+            'error': 'Wave analysis components not available',
+            'message': 'Advanced wave analysis features are not installed'
+        }), 503
+    
+    try:
+        # Parse request data
+        try:
+            data = request.get_json(force=True)
+        except Exception as e:
+            return jsonify({'error': 'Invalid JSON data', 'message': str(e)}), 400
+        
+        if data is None:
+            return jsonify({'error': 'No JSON data provided'}), 400
+        
+        file_id = data.get('file_id')
+        if not file_id:
+            return jsonify({'error': 'file_id is required'}), 400
+        
+        # Get analysis parameters
+        params = data.get('parameters', {})
+        sampling_rate = params.get('sampling_rate', SAMPLE_RATE)
+        min_snr = params.get('min_snr', 2.0)
+        min_detection_confidence = params.get('min_detection_confidence', 0.3)
+        
+        # Retrieve and load seismic data from GridFS
+        try:
+            with fs.get(file_id) as f:
+                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                    temp_file.write(f.read())
+                    temp_file_path = temp_file.name
+            
+            # Load audio data
+            try:
+                sr, seismic_data = wav.read(temp_file_path)
+                seismic_data = seismic_data.astype(np.float32)
+                if len(seismic_data.shape) > 1:  # Convert stereo to mono
+                    seismic_data = seismic_data.mean(axis=1)
+            except:
+                try:
+                    seismic_data, sr = sf.read(temp_file_path)
+                    if len(seismic_data.shape) > 1:
+                        seismic_data = seismic_data.mean(axis=1)
+                except:
+                    seismic_data, sr = librosa.load(temp_file_path, sr=sampling_rate, mono=True)
+            
+            # Clean up temporary file
+            os.remove(temp_file_path)
+            
+        except Exception as e:
+            return jsonify({
+                'error': 'Failed to load seismic data',
+                'message': str(e)
+            }), 400
+        
+        # Resample if necessary
+        if sr != sampling_rate:
+            seismic_data = librosa.resample(seismic_data, orig_sr=sr, target_sr=sampling_rate)
+            sr = sampling_rate
+        
+        # Initialize wave separation engine
+        separation_params = WaveSeparationParameters(
+            sampling_rate=sampling_rate,
+            min_snr=min_snr,
+            min_detection_confidence=min_detection_confidence
+        )
+        
+        wave_engine = WaveSeparationEngine(separation_params)
+        
+        # Perform wave separation
+        separation_result = wave_engine.separate_waves(seismic_data)
+        
+        # Initialize wave analyzer for detailed analysis
+        wave_analyzer = WaveAnalyzer(sampling_rate)
+        
+        # Perform comprehensive analysis
+        detailed_analysis = wave_analyzer.analyze_waves(separation_result.wave_analysis_result)
+        
+        # Store analysis results in database
+        analysis_id = db.wave_analyses.insert_one({
+            'file_id': file_id,
+            'analysis_timestamp': datetime.utcnow(),
+            'parameters': params,
+            'wave_separation': {
+                'p_waves_count': len(separation_result.wave_analysis_result.p_waves),
+                's_waves_count': len(separation_result.wave_analysis_result.s_waves),
+                'surface_waves_count': len(separation_result.wave_analysis_result.surface_waves)
+            },
+            'quality_metrics': {
+                'snr': separation_result.quality_metrics.signal_to_noise_ratio,
+                'detection_confidence': separation_result.quality_metrics.detection_confidence,
+                'analysis_quality_score': separation_result.quality_metrics.analysis_quality_score,
+                'data_completeness': separation_result.quality_metrics.data_completeness
+            },
+            'processing_metadata': separation_result.processing_metadata
+        }).inserted_id
+        
+        # Format response
+        response_data = {
+            'analysis_id': str(analysis_id),
+            'file_id': file_id,
+            'status': 'success',
+            'wave_separation': {
+                'p_waves': [{
+                    'wave_type': wave.wave_type,
+                    'start_time': wave.start_time,
+                    'end_time': wave.end_time,
+                    'arrival_time': wave.arrival_time,
+                    'peak_amplitude': wave.peak_amplitude,
+                    'dominant_frequency': wave.dominant_frequency,
+                    'confidence': wave.confidence,
+                    'duration': wave.duration
+                } for wave in separation_result.wave_analysis_result.p_waves],
+                's_waves': [{
+                    'wave_type': wave.wave_type,
+                    'start_time': wave.start_time,
+                    'end_time': wave.end_time,
+                    'arrival_time': wave.arrival_time,
+                    'peak_amplitude': wave.peak_amplitude,
+                    'dominant_frequency': wave.dominant_frequency,
+                    'confidence': wave.confidence,
+                    'duration': wave.duration
+                } for wave in separation_result.wave_analysis_result.s_waves],
+                'surface_waves': [{
+                    'wave_type': wave.wave_type,
+                    'start_time': wave.start_time,
+                    'end_time': wave.end_time,
+                    'arrival_time': wave.arrival_time,
+                    'peak_amplitude': wave.peak_amplitude,
+                    'dominant_frequency': wave.dominant_frequency,
+                    'confidence': wave.confidence,
+                    'duration': wave.duration
+                } for wave in separation_result.wave_analysis_result.surface_waves]
+            },
+            'detailed_analysis': {
+                'arrival_times': {
+                    'p_wave_arrival': detailed_analysis.arrival_times.p_wave_arrival,
+                    's_wave_arrival': detailed_analysis.arrival_times.s_wave_arrival,
+                    'surface_wave_arrival': detailed_analysis.arrival_times.surface_wave_arrival,
+                    'sp_time_difference': detailed_analysis.arrival_times.sp_time_difference
+                },
+                'magnitude_estimates': [{
+                    'method': est.method,
+                    'magnitude': est.magnitude,
+                    'confidence': est.confidence,
+                    'wave_type_used': est.wave_type_used
+                } for est in detailed_analysis.magnitude_estimates],
+                'epicenter_distance': detailed_analysis.epicenter_distance,
+                'frequency_analysis': {
+                    wave_type: {
+                        'dominant_frequency': freq_data.dominant_frequency,
+                        'frequency_range': freq_data.frequency_range,
+                        'spectral_centroid': freq_data.spectral_centroid,
+                        'bandwidth': freq_data.bandwidth
+                    } for wave_type, freq_data in detailed_analysis.frequency_analysis.items()
+                }
+            },
+            'quality_metrics': {
+                'signal_to_noise_ratio': separation_result.quality_metrics.signal_to_noise_ratio,
+                'detection_confidence': separation_result.quality_metrics.detection_confidence,
+                'analysis_quality_score': separation_result.quality_metrics.analysis_quality_score,
+                'data_completeness': separation_result.quality_metrics.data_completeness,
+                'processing_warnings': separation_result.quality_metrics.processing_warnings
+            },
+            'processing_metadata': separation_result.processing_metadata,
+            'warnings': separation_result.warnings,
+            'errors': separation_result.errors
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        app.logger.error(f"Wave analysis error: {str(e)}")
+        return jsonify({
+            'error': 'Wave analysis failed',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/wave_results/<analysis_id>', methods=['GET'])
+def get_wave_results(analysis_id):
+    """
+    API endpoint to retrieve wave analysis results by analysis ID.
+    
+    URL Parameters:
+    - analysis_id: MongoDB ObjectId of the analysis result
+    
+    Query Parameters:
+    - include_raw_data: boolean, whether to include raw wave data (default: false)
+    - wave_types: comma-separated list of wave types to include (default: all)
+    """
+    if not WAVE_ANALYSIS_AVAILABLE:
+        return jsonify({
+            'error': 'Wave analysis components not available',
+            'message': 'Advanced wave analysis features are not installed'
+        }), 503
+    
+    try:
+        from bson import ObjectId
+        
+        # Validate analysis_id format
+        try:
+            analysis_obj_id = ObjectId(analysis_id)
+        except:
+            return jsonify({'error': 'Invalid analysis_id format'}), 400
+        
+        # Get query parameters
+        include_raw_data = request.args.get('include_raw_data', 'false').lower() == 'true'
+        wave_types_param = request.args.get('wave_types', '')
+        requested_wave_types = [wt.strip() for wt in wave_types_param.split(',') if wt.strip()] if wave_types_param else []
+        
+        # Retrieve analysis result from database
+        analysis_result = db.wave_analyses.find_one({'_id': analysis_obj_id})
+        
+        if not analysis_result:
+            return jsonify({'error': 'Analysis result not found'}), 404
+        
+        # If raw data is requested, we need to re-run the analysis or retrieve cached data
+        if include_raw_data:
+            try:
+                # Retrieve original file and re-run analysis to get raw wave data
+                file_id = analysis_result['file_id']
+                
+                with fs.get(file_id) as f:
+                    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                        temp_file.write(f.read())
+                        temp_file_path = temp_file.name
+                
+                # Load audio data
+                try:
+                    sr, seismic_data = wav.read(temp_file_path)
+                    seismic_data = seismic_data.astype(np.float32)
+                    if len(seismic_data.shape) > 1:
+                        seismic_data = seismic_data.mean(axis=1)
+                except:
+                    try:
+                        seismic_data, sr = sf.read(temp_file_path)
+                        if len(seismic_data.shape) > 1:
+                            seismic_data = seismic_data.mean(axis=1)
+                    except:
+                        seismic_data, sr = librosa.load(temp_file_path, sr=SAMPLE_RATE, mono=True)
+                
+                os.remove(temp_file_path)
+                
+                # Re-run wave separation to get raw data
+                params = analysis_result.get('parameters', {})
+                separation_params = WaveSeparationParameters(
+                    sampling_rate=params.get('sampling_rate', SAMPLE_RATE),
+                    min_snr=params.get('min_snr', 2.0),
+                    min_detection_confidence=params.get('min_detection_confidence', 0.3)
+                )
+                
+                wave_engine = WaveSeparationEngine(separation_params)
+                separation_result = wave_engine.separate_waves(seismic_data)
+                
+                # Add raw wave data to response
+                raw_wave_data = {}
+                
+                if not requested_wave_types or 'P' in requested_wave_types:
+                    raw_wave_data['p_waves'] = [{
+                        'wave_type': wave.wave_type,
+                        'start_time': wave.start_time,
+                        'end_time': wave.end_time,
+                        'arrival_time': wave.arrival_time,
+                        'peak_amplitude': wave.peak_amplitude,
+                        'dominant_frequency': wave.dominant_frequency,
+                        'confidence': wave.confidence,
+                        'duration': wave.duration,
+                        'raw_data': wave.data.tolist(),
+                        'sampling_rate': wave.sampling_rate
+                    } for wave in separation_result.wave_analysis_result.p_waves]
+                
+                if not requested_wave_types or 'S' in requested_wave_types:
+                    raw_wave_data['s_waves'] = [{
+                        'wave_type': wave.wave_type,
+                        'start_time': wave.start_time,
+                        'end_time': wave.end_time,
+                        'arrival_time': wave.arrival_time,
+                        'peak_amplitude': wave.peak_amplitude,
+                        'dominant_frequency': wave.dominant_frequency,
+                        'confidence': wave.confidence,
+                        'duration': wave.duration,
+                        'raw_data': wave.data.tolist(),
+                        'sampling_rate': wave.sampling_rate
+                    } for wave in separation_result.wave_analysis_result.s_waves]
+                
+                if not requested_wave_types or any(wt in requested_wave_types for wt in ['Love', 'Rayleigh']):
+                    filtered_surface_waves = separation_result.wave_analysis_result.surface_waves
+                    if requested_wave_types:
+                        filtered_surface_waves = [w for w in filtered_surface_waves if w.wave_type in requested_wave_types]
+                    
+                    raw_wave_data['surface_waves'] = [{
+                        'wave_type': wave.wave_type,
+                        'start_time': wave.start_time,
+                        'end_time': wave.end_time,
+                        'arrival_time': wave.arrival_time,
+                        'peak_amplitude': wave.peak_amplitude,
+                        'dominant_frequency': wave.dominant_frequency,
+                        'confidence': wave.confidence,
+                        'duration': wave.duration,
+                        'raw_data': wave.data.tolist(),
+                        'sampling_rate': wave.sampling_rate
+                    } for wave in filtered_surface_waves]
+                
+                analysis_result['raw_wave_data'] = raw_wave_data
+                
+            except Exception as e:
+                app.logger.warning(f"Failed to retrieve raw wave data: {str(e)}")
+                analysis_result['raw_data_error'] = str(e)
+        
+        # Format response
+        response_data = {
+            'analysis_id': str(analysis_result['_id']),
+            'file_id': analysis_result['file_id'],
+            'analysis_timestamp': analysis_result['analysis_timestamp'].isoformat(),
+            'parameters': analysis_result.get('parameters', {}),
+            'wave_separation': analysis_result.get('wave_separation', {}),
+            'quality_metrics': analysis_result.get('quality_metrics', {}),
+            'processing_metadata': analysis_result.get('processing_metadata', {})
+        }
+        
+        # Add raw data if requested and available
+        if include_raw_data and 'raw_wave_data' in analysis_result:
+            response_data['raw_wave_data'] = analysis_result['raw_wave_data']
+        elif include_raw_data and 'raw_data_error' in analysis_result:
+            response_data['raw_data_error'] = analysis_result['raw_data_error']
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        app.logger.error(f"Error retrieving wave results: {str(e)}")
+        return jsonify({
+            'error': 'Failed to retrieve wave results',
+            'message': str(e)
+        }), 500
 
 # Run the application
 if __name__ == '__main__':

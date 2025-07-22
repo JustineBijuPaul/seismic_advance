@@ -1,0 +1,8 @@
+# Wave Analysis Export
+# Generated:,2025-07-23T00:35:24.362337
+# Total Waves:,3
+
+Wave Type,Segment ID,Start Time (s),End Time (s),Duration (s),Arrival Time (s),Peak Amplitude,Dominant Frequency (Hz),Confidence,Sampling Rate (Hz),Sample Count,RMS Amplitude,Energy
+P,0,1.0,3.0,2.0,1.2,0.042862929280770005,15.0,0.92,100.0,200,0.010145190237904254,0.020584976992653554
+S,0,3.0,6.0,3.0,3.2,0.00231097035333448,8.0,0.88,100.0,300,0.0005052454620982558,7.658189309126399e-05
+Love,0,8.0,10.0,2.0,8.2,0.017200735254446552,2.0,0.75,100.0,200,0.008504650334375643,0.014465815461999144
