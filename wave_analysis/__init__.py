@@ -23,6 +23,12 @@ from .interfaces import (
     WaveVisualizerInterface,
     WaveExporterInterface
 )
+from .services import (
+    TimeSeriesPlotter,
+    FrequencyPlotter,
+    MultiChannelPlotter,
+    ChannelData
+)
 
 __all__ = [
     'WaveSegment',
@@ -35,5 +41,9 @@ __all__ = [
     'WaveDetectorInterface',
     'WaveAnalyzerInterface',
     'WaveVisualizerInterface',
-    'WaveExporterInterface'
+    'WaveExporterInterface',
+    'TimeSeriesPlotter',
+    'FrequencyPlotter',
+    'MultiChannelPlotter',
+    'ChannelData'
 ]

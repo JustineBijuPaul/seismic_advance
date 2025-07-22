@@ -23,6 +23,9 @@ from .frequency_analyzer import FrequencyAnalyzer
 from .magnitude_estimator import MagnitudeEstimator
 from .wave_analyzer import WaveAnalyzer
 from .quality_metrics import QualityMetricsCalculator
+from .time_series_plotter import TimeSeriesPlotter
+from .frequency_plotter import FrequencyPlotter
+from .multi_channel_plotter import MultiChannelPlotter, ChannelData
 
 __all__ = [
     'SignalProcessor',
@@ -38,5 +41,9 @@ __all__ = [
     'FrequencyAnalyzer',
     'MagnitudeEstimator',
     'WaveAnalyzer',
-    'QualityMetricsCalculator'
+    'QualityMetricsCalculator',
+    'TimeSeriesPlotter',
+    'FrequencyPlotter',
+    'MultiChannelPlotter',
+    'ChannelData'
 ]
