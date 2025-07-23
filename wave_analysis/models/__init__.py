@@ -12,6 +12,11 @@ from .wave_models import (
     QualityMetrics
 )
 
+from .database_models import (
+    WaveAnalysisRepository,
+    create_wave_analysis_repository
+)
+
 __all__ = [
     'WaveSegment',
     'WaveAnalysisResult',
@@ -19,5 +24,7 @@ __all__ = [
     'ArrivalTimes',
     'MagnitudeEstimate',
     'FrequencyData',
-    'QualityMetrics'
+    'QualityMetrics',
+    'WaveAnalysisRepository',
+    'create_wave_analysis_repository'
 ]

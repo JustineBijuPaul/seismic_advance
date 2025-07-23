@@ -1,0 +1,685 @@
+{% extends "modern_base.html" %}
+
+{% block title %}Wave Analysis Dashboard - Seismic Quake{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 120px auto 40px;
+        padding: 0 20px;
+    }
+
+    .dashboard-header {
+        background: var(--gradient-card);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+    }
+
+    .dashboard-title {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .dashboard-subtitle {
+        color: var(--color-muted);
+        font-size: 1.1rem;
+    }
+
+    .control-panel {
+        background: var(--gradient-card);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .control-section {
+        margin-bottom: 2rem;
+    }
+
+    .control-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .control-section h3 {
+        color: var(--color-primary);
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .wave-type-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .wave-type-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        color: var(--color-text);
+    }
+
+    .wave-type-btn:hover {
+        border-color: var(--color-primary);
+        background: rgba(109, 93, 252, 0.1);
+    }
+
+    .wave-type-btn.active {
+        border-color: var(--color-primary);
+        background: var(--gradient-primary);
+        color: white;
+    }
+
+    .wave-type-btn .wave-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .wave-type-btn .wave-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .wave-type-btn .wave-description {
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+
+    .analysis-parameters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .parameter-group {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .parameter-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--color-text-dark);
+        font-weight: 500;
+    }
+
+    .parameter-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.5rem;
+        color: var(--color-text);
+        font-size: 0.9rem;
+    }
+
+    .parameter-input:focus {
+        border-color: var(--color-primary);
+        outline: none;
+    }
+
+    .visualization-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .chart-panel {
+        background: var(--gradient-card);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-title {
+        color: var(--color-primary);
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+
+    .chart-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .chart-control-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        color: var(--color-text);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+    }
+
+    .chart-control-btn:hover {
+        background: var(--color-primary);
+        color: white;
+    }
+
+    .chart-control-btn.active {
+        background: var(--color-primary);
+        color: white;
+    }
+
+    .chart-canvas {
+        width: 100% !important;
+        height: 400px !important;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .analysis-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .result-panel {
+        background: var(--gradient-card);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .result-panel h3 {
+        color: var(--color-primary);
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .metric-item {
+        text-align: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+    }
+
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: var(--color-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+        font-size: 0.85rem;
+        color: var(--color-muted);
+    }
+
+    .wave-characteristics {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .wave-characteristics li {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .wave-characteristics li:last-child {
+        border-bottom: none;
+    }
+
+    .characteristic-label {
+        color: var(--color-text);
+    }
+
+    .characteristic-value {
+        color: var(--color-primary);
+        font-weight: 500;
+    }
+
+    .educational-panel {
+        background: var(--gradient-card);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .educational-content {
+        display: none;
+    }
+
+    .educational-content.active {
+        display: block;
+    }
+
+    .educational-content h4 {
+        color: var(--color-primary);
+        margin-bottom: 1rem;
+    }
+
+    .educational-content p {
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .educational-content ul {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .educational-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .action-toolbar {
+        background: var(--gradient-card);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+    }
+
+    .toolbar-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .toolbar-btn {
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .toolbar-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(109, 93, 252, 0.4);
+    }
+
+    .toolbar-btn.secondary {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-indicator.ready {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+    }
+
+    .status-indicator.processing {
+        background: rgba(255, 193, 7, 0.2);
+        color: #FFC107;
+    }
+
+    .status-indicator.error {
+        background: rgba(244, 67, 54, 0.2);
+        color: #F44336;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-content {
+        text-align: center;
+        color: white;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--color-primary);
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            margin-top: 100px;
+            padding: 0 10px;
+        }
+
+        .wave-type-selector {
+            grid-template-columns: 1fr;
+        }
+
+        .analysis-parameters {
+            grid-template-columns: 1fr;
+        }
+
+        .analysis-results {
+            grid-template-columns: 1fr;
+        }
+
+        .toolbar-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .toolbar-btn {
+            width: 100%;
+            max-width: 300px;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-on-scroll">
+        <h1 class="dashboard-title">Wave Analysis Dashboard</h1>
+        <p class="dashboard-subtitle">Advanced seismic wave separation and analysis</p>
+        <div class="status-indicator ready" id="systemStatus">
+            <span class="status-dot"></span>
+            <span>System Ready</span>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel animate-on-scroll">
+        <div class="control-section">
+            <h3>Wave Type Selection</h3>
+            <div class="wave-type-selector">
+                <div class="wave-type-btn active" data-wave-type="all">
+                    <span class="wave-icon">🌊</span>
+                    <div class="wave-name">All Waves</div>
+                    <div class="wave-description">Complete analysis</div>
+                </div>
+                <div class="wave-type-btn" data-wave-type="p-wave">
+                    <span class="wave-icon">⚡</span>
+                    <div class="wave-name">P-Waves</div>
+                    <div class="wave-description">Primary waves</div>
+                </div>
+                <div class="wave-type-btn" data-wave-type="s-wave">
+                    <span class="wave-icon">〰️</span>
+                    <div class="wave-name">S-Waves</div>
+                    <div class="wave-description">Secondary waves</div>
+                </div>
+                <div class="wave-type-btn" data-wave-type="surface">
+                    <span class="wave-icon">🏔️</span>
+                    <div class="wave-name">Surface Waves</div>
+                    <div class="wave-description">Love & Rayleigh</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Analysis Parameters</h3>
+            <div class="analysis-parameters">
+                <div class="parameter-group">
+                    <label for="samplingRate">Sampling Rate (Hz)</label>
+                    <input type="number" id="samplingRate" class="parameter-input" value="100" min="1" max="1000">
+                </div>
+                <div class="parameter-group">
+                    <label for="minSnr">Minimum SNR</label>
+                    <input type="number" id="minSnr" class="parameter-input" value="2.0" min="0.1" max="10" step="0.1">
+                </div>
+                <div class="parameter-group">
+                    <label for="minConfidence">Min Detection Confidence</label>
+                    <input type="number" id="minConfidence" class="parameter-input" value="0.3" min="0.1" max="1" step="0.1">
+                </div>
+                <div class="parameter-group">
+                    <label for="filterFreq">Filter Frequency (Hz)</label>
+                    <input type="number" id="filterFreq" class="parameter-input" value="20" min="1" max="100">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visualization Container -->
+    <div class="visualization-container animate-on-scroll">
+        <div class="chart-panel">
+            <div class="chart-header">
+                <h3 class="chart-title">Time Series Analysis</h3>
+                <div class="chart-controls">
+                    <button class="chart-control-btn active" data-chart="waveform">Waveform</button>
+                    <button class="chart-control-btn" data-chart="frequency">Frequency</button>
+                    <button class="chart-control-btn" data-chart="spectrogram">Spectrogram</button>
+                </div>
+            </div>
+            <canvas id="mainChart" class="chart-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="analysis-results animate-on-scroll">
+        <div class="result-panel">
+            <h3>Wave Detection Results</h3>
+            <div class="metric-grid">
+                <div class="metric-item">
+                    <div class="metric-value" id="pWaveCount">-</div>
+                    <div class="metric-label">P-Waves</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="sWaveCount">-</div>
+                    <div class="metric-label">S-Waves</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="surfaceWaveCount">-</div>
+                    <div class="metric-label">Surface Waves</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value" id="qualityScore">-</div>
+                    <div class="metric-label">Quality Score</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-panel">
+            <h3>Arrival Times</h3>
+            <ul class="wave-characteristics">
+                <li>
+                    <span class="characteristic-label">P-Wave Arrival</span>
+                    <span class="characteristic-value" id="pWaveArrival">-</span>
+                </li>
+                <li>
+                    <span class="characteristic-label">S-Wave Arrival</span>
+                    <span class="characteristic-value" id="sWaveArrival">-</span>
+                </li>
+                <li>
+                    <span class="characteristic-label">S-P Time Difference</span>
+                    <span class="characteristic-value" id="spTimeDiff">-</span>
+                </li>
+                <li>
+                    <span class="characteristic-label">Surface Wave Arrival</span>
+                    <span class="characteristic-value" id="surfaceWaveArrival">-</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="result-panel">
+            <h3>Magnitude Estimates</h3>
+            <ul class="wave-characteristics" id="magnitudeList">
+                <li>
+                    <span class="characteristic-label">No data available</span>
+                    <span class="characteristic-value">-</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Educational Panel -->
+    <div class="educational-panel animate-on-scroll">
+        <h3>Educational Information</h3>
+        <div class="wave-type-selector" style="margin-bottom: 1rem;">
+            <div class="wave-type-btn" data-education="p-wave">
+                <span class="wave-icon">📚</span>
+                <div class="wave-name">P-Wave Info</div>
+            </div>
+            <div class="wave-type-btn" data-education="s-wave">
+                <span class="wave-icon">📖</span>
+                <div class="wave-name">S-Wave Info</div>
+            </div>
+            <div class="wave-type-btn" data-education="surface">
+                <span class="wave-icon">📝</span>
+                <div class="wave-name">Surface Wave Info</div>
+            </div>
+            <div class="wave-type-btn" data-education="analysis">
+                <span class="wave-icon">🔬</span>
+                <div class="wave-name">Analysis Guide</div>
+            </div>
+        </div>
+
+        <div class="educational-content active" id="education-p-wave">
+            <h4>P-Waves (Primary Waves)</h4>
+            <p>P-waves are the fastest seismic waves and arrive first at recording stations. They are compressional waves that can travel through both solid and liquid materials.</p>
+            <ul>
+                <li><strong>Speed:</strong> 6-8 km/s in the Earth's crust</li>
+                <li><strong>Motion:</strong> Particles move parallel to wave direction</li>
+                <li><strong>Detection:</strong> First clear arrival on seismograms</li>
+                <li><strong>Importance:</strong> Used for initial earthquake detection and location</li>
+            </ul>
+        </div>
+
+        <div class="educational-content" id="education-s-wave">
+            <h4>S-Waves (Secondary Waves)</h4>
+            <p>S-waves are slower than P-waves and cause more ground shaking. They cannot travel through liquids, making them important for studying Earth's interior structure.</p>
+            <ul>
+                <li><strong>Speed:</strong> 3-4 km/s in the Earth's crust</li>
+                <li><strong>Motion:</strong> Particles move perpendicular to wave direction</li>
+                <li><strong>Detection:</strong> Larger amplitude, arrives after P-waves</li>
+                <li><strong>Importance:</strong> Critical for magnitude estimation and damage assessment</li>
+            </ul>
+        </div>
+
+        <div class="educational-content" id="education-surface">
+            <h4>Surface Waves</h4>
+            <p>Surface waves travel along the Earth's surface and cause the most damage during earthquakes. They include Love waves and Rayleigh waves.</p>
+            <ul>
+                <li><strong>Love Waves:</strong> Horizontal shearing motion</li>
+                <li><strong>Rayleigh Waves:</strong> Elliptical rolling motion</li>
+                <li><strong>Speed:</strong> Slower than body waves (2-4 km/s)</li>
+                <li><strong>Importance:</strong> Dominant in earthquake damage, used for magnitude calculation</li>
+            </ul>
+        </div>
+
+        <div class="educational-content" id="education-analysis">
+            <h4>Wave Analysis Guide</h4>
+            <p>Understanding seismic wave analysis helps interpret earthquake characteristics and assess potential hazards.</p>
+            <ul>
+                <li><strong>S-P Time:</strong> Difference between S and P arrival times indicates distance to earthquake</li>
+                <li><strong>Amplitude:</strong> Wave height relates to earthquake magnitude and energy</li>
+                <li><strong>Frequency:</strong> Wave frequency content provides information about source and path</li>
+                <li><strong>Quality Metrics:</strong> Signal-to-noise ratio and confidence scores indicate reliability</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Action Toolbar -->
+    <div class="action-toolbar animate-on-scroll">
+        <div class="toolbar-buttons">
+            <button class="toolbar-btn" id="analyzeBtn">
+                <span>🔍</span>
+                Start Analysis
+            </button>
+            <button class="toolbar-btn secondary" id="exportBtn">
+                <span>💾</span>
+                Export Results
+            </button>
+            <button class="toolbar-btn secondary" id="reportBtn">
+                <span>📄</span>
+                Generate Report
+            </button>
+            <button class="toolbar-btn secondary" id="resetBtn">
+                <span>🔄</span>
+                Reset Dashboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <h3>Processing Wave Analysis...</h3>
+        <p id="loadingMessage">Initializing analysis...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+<script src="{{ url_for('static', filename='js/alert_system.js') }}"></script>
+<script src="{{ url_for('static', filename='js/educational_system.js') }}"></script>
+<script src="{{ url_for('static', filename='js/wave_dashboard.js') }}"></script>
+{% endblock %}

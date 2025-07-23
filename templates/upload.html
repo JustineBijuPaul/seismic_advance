@@ -180,6 +180,102 @@
         width: 100% !important;
         height: 300px !important;
     }
+
+    .analysis-options {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .option-group {
+        margin-bottom: 1rem;
+    }
+
+    .option-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--color-text);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        margin-right: 0.5rem;
+        transform: scale(1.2);
+    }
+
+    .option-description {
+        margin: 0.25rem 0 0 1.7rem;
+        font-size: 0.9rem;
+        color: var(--color-muted);
+        line-height: 1.4;
+    }
+
+    .async-status {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: var(--gradient-primary);
+        transition: width 0.3s ease;
+        border-radius: 4px;
+    }
+
+    .wave-analysis-results {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .wave-analysis-results h4 {
+        margin: 0 0 0.5rem 0;
+        color: var(--color-primary);
+    }
+
+    .wave-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .wave-stat {
+        text-align: center;
+        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+    }
+
+    .wave-stat-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--color-primary);
+    }
+
+    .wave-stat-label {
+        font-size: 0.8rem;
+        color: var(--color-muted);
+    }
 </style>
 {% endblock %}
 
@@ -200,6 +296,27 @@
                     </svg>
                     <h3>Drop your file here</h3>
                     <p>or click to browse</p>
+                </div>
+                
+                <!-- Analysis Options -->
+                <div class="analysis-options" style="margin-top: 1rem; text-align: left;">
+                    <div class="option-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableWaveAnalysis" name="enable_wave_analysis">
+                            <span class="checkmark"></span>
+                            Enable Advanced Wave Analysis (P, S, Surface waves)
+                        </label>
+                        <p class="option-description">Automatically separate and analyze different seismic wave types</p>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="enableAsyncProcessing" name="async_processing">
+                            <span class="checkmark"></span>
+                            Use Background Processing
+                        </label>
+                        <p class="option-description">Process large files in the background (automatically enabled for files > 50MB)</p>
+                    </div>
                 </div>
             </form>
         </div>
@@ -328,6 +445,13 @@
         function handleUpload(file) {
             const formData = new FormData();
             formData.append('file', file);
+            
+            // Get analysis options
+            const enableWaveAnalysis = document.getElementById('enableWaveAnalysis').checked;
+            const enableAsyncProcessing = document.getElementById('enableAsyncProcessing').checked;
+            
+            formData.append('enable_wave_analysis', enableWaveAnalysis);
+            formData.append('async_processing', enableAsyncProcessing);
 
             if (loaderContainer) {
                 loaderContainer.style.display = 'flex';
@@ -341,26 +465,13 @@
             })
             .then(response => {
                 responseData = response.data;
-                const resultDiv = document.getElementById('result');
-                if (resultDiv) {
-                    resultDiv.innerHTML = `<p>${responseData.prediction}</p>`;
-                }
-
-                if (responseData.prediction === 'Seismic Activity Detected') {
-                    updateChart(responseData);
-                }
-
-                if (loaderContainer) {
-                    loaderContainer.style.display = 'none';
-                }
-                if (resultsSection) {
-                    resultsSection.style.display = 'block';
-                }
-
-                currentFileId = response.data.file_id;
-                const monitoringControls = document.getElementById('monitoringControls');
-                if (monitoringControls) {
-                    monitoringControls.style.display = 'block';
+                
+                if (responseData.async) {
+                    // Handle asynchronous processing
+                    handleAsyncProcessing(responseData);
+                } else {
+                    // Handle synchronous processing (existing behavior)
+                    handleSyncResults(responseData);
                 }
             })
             .catch(error => {
@@ -370,6 +481,193 @@
                 }
                 alert('Error uploading file. Please try again.');
             });
+        }
+
+        // Handle synchronous processing results
+        function handleSyncResults(data) {
+            const resultDiv = document.getElementById('result');
+            if (resultDiv) {
+                let resultHtml = `<p>${data.prediction}</p>`;
+                
+                // Add wave analysis results if available
+                if (data.wave_analysis) {
+                    resultHtml += renderWaveAnalysisResults(data.wave_analysis);
+                }
+                
+                resultDiv.innerHTML = resultHtml;
+            }
+
+            if (data.prediction === 'Seismic Activity Detected') {
+                updateChart(data);
+            }
+
+            if (loaderContainer) {
+                loaderContainer.style.display = 'none';
+            }
+            if (resultsSection) {
+                resultsSection.style.display = 'block';
+            }
+
+            currentFileId = data.file_id;
+            const monitoringControls = document.getElementById('monitoringControls');
+            if (monitoringControls) {
+                monitoringControls.style.display = 'block';
+            }
+        }
+
+        // Handle asynchronous processing
+        function handleAsyncProcessing(data) {
+            if (loaderContainer) {
+                loaderContainer.style.display = 'none';
+            }
+            
+            // Show async status section
+            showAsyncStatus(data.task_id, data.message);
+            
+            // Start polling for results
+            pollTaskStatus(data.task_id);
+        }
+
+        // Show async processing status
+        function showAsyncStatus(taskId, message) {
+            const resultsSection = document.querySelector('.results-section');
+            if (resultsSection) {
+                resultsSection.innerHTML = `
+                    <div class="modern-card animate-on-scroll">
+                        <div class="async-status">
+                            <h3>Processing in Background</h3>
+                            <p id="asyncMessage">${message}</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                            </div>
+                            <p id="progressText">0% complete</p>
+                            <p><small>Task ID: ${taskId}</small></p>
+                        </div>
+                    </div>
+                `;
+                resultsSection.style.display = 'block';
+            }
+        }
+
+        // Poll task status
+        function pollTaskStatus(taskId) {
+            const pollInterval = setInterval(() => {
+                axios.get(`/api/task_status/${taskId}`)
+                    .then(response => {
+                        const status = response.data;
+                        updateAsyncStatus(status);
+                        
+                        if (status.status === 'completed') {
+                            clearInterval(pollInterval);
+                            handleTaskCompletion(taskId);
+                        } else if (status.status === 'failed') {
+                            clearInterval(pollInterval);
+                            handleTaskFailure(status);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling task status:', error);
+                        clearInterval(pollInterval);
+                    });
+            }, 2000); // Poll every 2 seconds
+        }
+
+        // Update async status display
+        function updateAsyncStatus(status) {
+            const messageEl = document.getElementById('asyncMessage');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            if (messageEl) messageEl.textContent = status.message || 'Processing...';
+            if (progressFill) progressFill.style.width = `${status.progress || 0}%`;
+            if (progressText) progressText.textContent = `${status.progress || 0}% complete`;
+        }
+
+        // Handle task completion
+        function handleTaskCompletion(taskId) {
+            axios.get(`/api/task_results/${taskId}`)
+                .then(response => {
+                    responseData = response.data;
+                    handleSyncResults(responseData);
+                })
+                .catch(error => {
+                    console.error('Error getting task results:', error);
+                    alert('Error retrieving analysis results.');
+                });
+        }
+
+        // Handle task failure
+        function handleTaskFailure(status) {
+            const resultsSection = document.querySelector('.results-section');
+            if (resultsSection) {
+                resultsSection.innerHTML = `
+                    <div class="modern-card animate-on-scroll">
+                        <div class="async-status">
+                            <h3>Processing Failed</h3>
+                            <p style="color: #ff6b6b;">${status.message || 'Unknown error occurred'}</p>
+                            <button onclick="location.reload()" class="modern-btn">Try Again</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render wave analysis results
+        function renderWaveAnalysisResults(waveAnalysis) {
+            let html = '<div class="wave-analysis-results">';
+            html += '<h4>Wave Analysis Results</h4>';
+            
+            // Wave separation stats
+            if (waveAnalysis.wave_separation) {
+                html += '<div class="wave-stats">';
+                html += `<div class="wave-stat">
+                    <div class="wave-stat-value">${waveAnalysis.wave_separation.p_waves_count}</div>
+                    <div class="wave-stat-label">P-Waves</div>
+                </div>`;
+                html += `<div class="wave-stat">
+                    <div class="wave-stat-value">${waveAnalysis.wave_separation.s_waves_count}</div>
+                    <div class="wave-stat-label">S-Waves</div>
+                </div>`;
+                html += `<div class="wave-stat">
+                    <div class="wave-stat-value">${waveAnalysis.wave_separation.surface_waves_count}</div>
+                    <div class="wave-stat-label">Surface Waves</div>
+                </div>`;
+                html += '</div>';
+            }
+            
+            // Arrival times
+            if (waveAnalysis.arrival_times) {
+                html += '<div style="margin-top: 1rem;">';
+                html += '<h5>Arrival Times</h5>';
+                if (waveAnalysis.arrival_times.p_wave_arrival) {
+                    html += `<p>P-Wave: ${waveAnalysis.arrival_times.p_wave_arrival.toFixed(2)}s</p>`;
+                }
+                if (waveAnalysis.arrival_times.s_wave_arrival) {
+                    html += `<p>S-Wave: ${waveAnalysis.arrival_times.s_wave_arrival.toFixed(2)}s</p>`;
+                }
+                if (waveAnalysis.arrival_times.sp_time_difference) {
+                    html += `<p>S-P Time: ${waveAnalysis.arrival_times.sp_time_difference.toFixed(2)}s</p>`;
+                }
+                html += '</div>';
+            }
+            
+            // Magnitude estimates
+            if (waveAnalysis.magnitude_estimates && waveAnalysis.magnitude_estimates.length > 0) {
+                html += '<div style="margin-top: 1rem;">';
+                html += '<h5>Magnitude Estimates</h5>';
+                waveAnalysis.magnitude_estimates.forEach(est => {
+                    html += `<p>${est.method}: ${est.magnitude.toFixed(1)} (confidence: ${(est.confidence * 100).toFixed(0)}%)</p>`;
+                });
+                html += '</div>';
+            }
+            
+            // Quality score
+            if (waveAnalysis.quality_score) {
+                html += `<p style="margin-top: 1rem;"><strong>Analysis Quality: ${(waveAnalysis.quality_score * 100).toFixed(0)}%</strong></p>`;
+            }
+            
+            html += '</div>';
+            return html;
         }
 
         // Chart update function

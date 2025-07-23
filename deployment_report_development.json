@@ -1,0 +1,81 @@
+{
+  "environment": "development",
+  "timestamp": "unknown",
+  "configuration": {
+    "wave_analysis": {
+      "sampling_rate": 100.0,
+      "min_snr": 2.0,
+      "min_detection_confidence": 0.3,
+      "p_wave_sta_window": 0.5,
+      "p_wave_lta_window": 10.0,
+      "p_wave_trigger_ratio": 3.0,
+      "p_wave_detrigger_ratio": 1.5,
+      "s_wave_sta_window": 1.0,
+      "s_wave_lta_window": 20.0,
+      "s_wave_trigger_ratio": 2.5,
+      "s_wave_detrigger_ratio": 1.2,
+      "surface_wave_min_period": 10.0,
+      "surface_wave_max_period": 100.0,
+      "surface_wave_min_group_velocity": 2.5,
+      "surface_wave_max_group_velocity": 4.5,
+      "magnitude_estimation_methods": [
+        "ML",
+        "Mb",
+        "Ms"
+      ],
+      "frequency_analysis_window": 4.0,
+      "arrival_time_precision": 0.01,
+      "max_file_size_mb": 100,
+      "processing_timeout_seconds": 120,
+      "cache_ttl_seconds": 1800,
+      "max_concurrent_analyses": 3,
+      "magnitude_alert_threshold": 3.0,
+      "distance_alert_threshold_km": 50.0,
+      "alert_cooldown_seconds": 30
+    },
+    "database": {
+      "connection_timeout_ms": 5000,
+      "socket_timeout_ms": 30000,
+      "max_pool_size": 50,
+      "min_pool_size": 5,
+      "max_idle_time_ms": 60000,
+      "gridfs_chunk_size": 261120,
+      "wave_analyses_collection": "wave_analyses",
+      "analysis_cache_collection": "analysis_cache",
+      "monitoring_results_collection": "monitoring_results",
+      "async_analyses_collection": "async_analyses"
+    },
+    "logging": {
+      "level": "DEBUG",
+      "format": "%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+      "enable_file_logging": true,
+      "log_file_path": "logs/wave_analysis_dev.log",
+      "max_file_size_mb": 5,
+      "backup_count": 3,
+      "enable_performance_logging": true,
+      "performance_log_file": "logs/performance_dev.log",
+      "enable_alert_logging": true,
+      "alert_log_file": "logs/alerts_dev.log"
+    },
+    "deployment": {
+      "environment": "development",
+      "debug": true,
+      "secret_key": "dev-earthquake-analysis-secret-key",
+      "enable_cors": true,
+      "allowed_origins": [
+        "*"
+      ],
+      "enable_caching": true,
+      "cache_backend": "memory",
+      "redis_url": null,
+      "enable_metrics": true,
+      "metrics_port": 9090,
+      "health_check_interval": 10
+    }
+  },
+  "validation_results": {
+    "errors": [],
+    "warnings": []
+  },
+  "ready_for_deployment": true
+}

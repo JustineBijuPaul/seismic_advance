@@ -16,6 +16,8 @@ from .wave_detectors import (
     PWaveDetectionParameters,
     SWaveDetector,
     SWaveDetectionParameters,
+    SurfaceWaveDetector,
+    SurfaceWaveDetectionParameters,
     DetectionParameters
 )
 from .arrival_time_calculator import ArrivalTimeCalculator
@@ -28,6 +30,40 @@ from .frequency_plotter import FrequencyPlotter
 from .multi_channel_plotter import MultiChannelPlotter, ChannelData
 from .data_exporter import DataExporter, MSEEDExporter, CSVExporter
 from .pdf_report_generator import PDFReportGenerator, PDFReportError
+from .wave_separation_engine import WaveSeparationEngine, WaveSeparationParameters, WaveSeparationResult
+from .streaming_analyzer import StreamingAnalyzer, StreamingBuffer, StreamingAnalysisResult
+from .alert_system import (
+    AlertSystem,
+    AlertEvent,
+    AlertThreshold,
+    AlertSeverity,
+    AlertType,
+    AlertHandlerInterface,
+    WebSocketAlertHandler,
+    LogAlertHandler
+)
+from .analysis_cache import AnalysisCacheManager, CacheDecorator
+from .cache_warming import CacheWarmingService, WarmingStrategy
+from .performance_profiler import (
+    PerformanceProfiler, MemoryMonitor, PerformanceMetrics,
+    profile_wave_operation, global_profiler
+)
+from .performance_benchmarks import (
+    PerformanceBenchmarkSuite, SyntheticDataGenerator,
+    BenchmarkResult, ScalabilityTestResult
+)
+from .performance_optimizer import (
+    PerformanceOptimizer, ParallelProcessor, AlgorithmOptimizer,
+    CacheOptimizer, OptimizationResult
+)
+from .wave_pattern_library import (
+    WavePatternLibrary,
+    WavePattern,
+    WavePatternType,
+    PatternCategory,
+    PatternComparison
+)
+from .pattern_comparison import PatternComparisonService, AnalysisComparison
 
 __all__ = [
     'SignalProcessor',
@@ -38,6 +74,8 @@ __all__ = [
     'PWaveDetectionParameters',
     'SWaveDetector',
     'SWaveDetectionParameters',
+    'SurfaceWaveDetector',
+    'SurfaceWaveDetectionParameters',
     'DetectionParameters',
     'ArrivalTimeCalculator',
     'FrequencyAnalyzer',
@@ -52,5 +90,44 @@ __all__ = [
     'MSEEDExporter',
     'CSVExporter',
     'PDFReportGenerator',
-    'PDFReportError'
+    'PDFReportError',
+    'WaveSeparationEngine',
+    'WaveSeparationParameters',
+    'WaveSeparationResult',
+    'StreamingAnalyzer',
+    'StreamingBuffer',
+    'StreamingAnalysisResult',
+    'AlertSystem',
+    'AlertEvent',
+    'AlertThreshold',
+    'AlertSeverity',
+    'AlertType',
+    'AlertHandlerInterface',
+    'WebSocketAlertHandler',
+    'LogAlertHandler',
+    'AnalysisCacheManager',
+    'CacheDecorator',
+    'CacheWarmingService',
+    'WarmingStrategy',
+    'PerformanceProfiler',
+    'MemoryMonitor',
+    'PerformanceMetrics',
+    'profile_wave_operation',
+    'global_profiler',
+    'PerformanceBenchmarkSuite',
+    'SyntheticDataGenerator',
+    'BenchmarkResult',
+    'ScalabilityTestResult',
+    'PerformanceOptimizer',
+    'ParallelProcessor',
+    'AlgorithmOptimizer',
+    'CacheOptimizer',
+    'OptimizationResult',
+    'WavePatternLibrary',
+    'WavePattern',
+    'WavePatternType',
+    'PatternCategory',
+    'PatternComparison',
+    'PatternComparisonService',
+    'AnalysisComparison'
 ]
